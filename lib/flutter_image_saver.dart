@@ -28,12 +28,16 @@ Future<String> saveImage(
           path = '${await _channel.invokeMethod('getPicturesDirectory')}/$path';
         } else if (await Permission.storage.request().isPermanentlyDenied) {
           openAppSettings();
+        } else {
+          return '';
         }
       } else {
-        if (!await Permission.photos.request().isGranted) {
+        if (await Permission.photos.request().isGranted) {
           path = '${await _channel.invokeMethod('getPicturesDirectory')}/$path';
         } else if (await Permission.photos.request().isPermanentlyDenied) {
           openAppSettings();
+        } else {
+          return '';
         }
       }
     }
