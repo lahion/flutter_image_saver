@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:cross_file/cross_file.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -19,10 +20,22 @@ Future<String> saveImage(
     if (UniversalPlatform.isDesktop) {
       path = '${(await getDownloadsDirectory())?.path}/$path';
     } else if (UniversalPlatform.isAndroid) {
-      if (!await Permission.storage.request().isGranted) {
-        return '';
+      DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+      AndroidDeviceInfo android = await deviceInfo.androidInfo;
+
+      if (android.version.sdkInt < 33) {
+        if (await Permission.storage.request().isGranted) {
+          path = '${await _channel.invokeMethod('getPicturesDirectory')}/$path';
+        } else if (await Permission.storage.request().isPermanentlyDenied) {
+          openAppSettings();
+        }
+      } else {
+        if (!await Permission.photos.request().isGranted) {
+          path = '${await _channel.invokeMethod('getPicturesDirectory')}/$path';
+        } else if (await Permission.photos.request().isPermanentlyDenied) {
+          openAppSettings();
+        }
       }
-      path = '${await _channel.invokeMethod('getPicturesDirectory')}/$path';
     }
   }
   if (UniversalPlatform.isIOS) {
